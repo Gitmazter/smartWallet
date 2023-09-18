@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 error InvalidAmount(uint256 sent, uint256 minRequired);
 error InsufficientBalance(uint256 requestedAmount, uint256 balance);
 
+
+
 contract Trier {
   function sufficientBalance(uint256 balance,uint256 amount) public pure {
     require(balance >= amount);
@@ -13,6 +15,7 @@ contract Trier {
     require(amount > 0);
   }
 }
+
 
 contract SimpleWallet {
     mapping(address => User) users;
@@ -33,7 +36,7 @@ contract SimpleWallet {
     event Deposited   (address indexed account, uint256 amount);
     event Withdrawn   (address indexed account, uint256 amount);
     event Transferred (address indexed from, address indexed to, uint256 amount);
-    event Log(string message);
+    event Log         (string message);
 
     // Modifier to check if the user exists
     modifier userExists(address user) {
@@ -53,9 +56,11 @@ contract SimpleWallet {
         // amount is good;
         User storage user = users[msg.sender];
         user.balance += msg.value;
+        emit Deposited(msg.sender, msg.value);
       }
       catch {
-        // amount is not good revert
+        // amount is no-good 
+        // revert with error message
         revert InvalidAmount ({
           sent: msg.value,
           minRequired: minRequired
@@ -66,13 +71,17 @@ contract SimpleWallet {
 
     // Function to withdraw Ether with try catch
     function Withdraw(uint256 amount) public payable userExists(msg.sender) {
+      // user exists
       User storage user = users[msg.sender];
       try trier.sufficientBalance(user.balance, amount) {
+        // balance is good
         user.balance -= amount;
         require(payable(msg.sender).send(amount), "Failed to send Ether.");
         emit Withdrawn(msg.sender, amount);
       }
       catch {
+        // balance is no-good
+        // revert with error message
         revert InsufficientBalance({
           requestedAmount: amount,
           balance: user.balance
@@ -81,7 +90,7 @@ contract SimpleWallet {
     }
 
 
-    // Function to transfer between registered accounts with try catch,
+    // Function to transfer between known accounts with try catch,
     function Transfer(uint256 amount, address recipient ) public userExists(recipient) userExists(msg.sender) {
       // users exist
       User storage sender = users[msg.sender];
@@ -95,6 +104,8 @@ contract SimpleWallet {
         emit Transferred(msg.sender, recipient ,amount);
       }   
       catch {
+        // balance is no-good
+        // revert with error message
         revert InsufficientBalance({
           requestedAmount: amount,
           balance: sender.balance
@@ -102,7 +113,7 @@ contract SimpleWallet {
       }
     }
 
-    // Function to check balance
+    // Function to check balance for personal accounts
     function checkBalance() public view returns (uint256) {
         return users[msg.sender].balance;
     }
