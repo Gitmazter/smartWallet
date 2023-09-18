@@ -24,6 +24,7 @@ contract SimpleWallet {
       minRequired = _minRequired;
       trier = new Trier();
     }
+    // struct for users
     struct User {
         uint256 balance;
     }
